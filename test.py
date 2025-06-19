@@ -122,6 +122,25 @@ def LockMirrors():
     return Summary
 
 
+def RetryLock():
+    '''
+    Retries to lock the mirrors on the DMD. 
+    Often times you may get unlucky and lock the mirrors on the wrong side of 
+    the duty cycle. 
+    
+    Quickly unlocks the mirros and then locks them again.
+    '''
+    global locked
+    if not locked:
+        print("The mirrors were not locked. Locking.")
+        LockMirrors()
+    
+    UnlockMirrors()
+    time.sleep(0.25)
+    Summary = LockMirrors()
+    return Summary
+    
+
 def UnlockMirrors():
     '''
     Unlocks the mirrors on the DLPDLCR230NPEVM.
@@ -160,6 +179,7 @@ def Menu():
    h    Horizontal Ramp   
    v    Vertical Ramp     
    l    Lock Mirrors              
+   r    Retry Lock
    u    Unlock Mirrors            
    q    Quit                      
    m    Display Menu               
@@ -204,6 +224,7 @@ mode = {
     'h' : DisplayHorizontalRamp, 
     'v' : DisplayVerticalRamp,
     'l' : LockMirrors, 
+    'r' : RetryLock,
     'u' : UnlockMirrors,
     'q' : Quit, 
     'm' : Menu,
