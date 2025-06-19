@@ -1,0 +1,255 @@
+import struct
+import time
+
+from enum import Enum
+
+import sys, os.path
+python_dir = (os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(python_dir)
+from api.dlpc343x_xpr4 import *
+from api.dlpc343x_xpr4_evm import *
+from linuxi2c import *
+import i2c
+
+
+
+def DisplayWhite():
+    """
+    Turns all DMD mirrors to the 'ON' position. 
+    """
+    print("Setting all mirrors to ON position (white).")
+    Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
+                                         FpgaTestPatternColor.White,
+                                         FpgaTestPattern.SolidField,  
+                                         255)
+    return Summary
+
+def DisplayBlack():
+    """
+    Turns all DMD mirrors to the 'OFF' position. 
+    """
+    print("Setting all mirrors to OFF position (black).")
+    Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
+                                         FpgaTestPatternColor.Black,
+                                         FpgaTestPattern.SolidField,  
+                                         255)
+    return Summary
+
+def DisplayCheckerboard():
+    '''
+    Displays a checkerboard pattern on the DMD.
+    '''
+    print("Displaying checkerboard pattern.")
+    Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
+                                         FpgaTestPatternColor.White,   
+                                         FpgaTestPattern.Checkerboard,  
+                                         50)
+    return Summary
+
+
+def DisplayHorizontalRamp():
+    '''
+    Displays a horizontal ramp pattern on the DMD.
+    The ramp goes from black to white.
+    '''
+    print("Displaying horizontal ramp pattern.")
+    Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
+                                         FpgaTestPatternColor.White,   
+                                         FpgaTestPattern.HorizontalRamp,  
+                                         255)
+    return Summary
+
+
+def DisplayVerticalRamp():
+    '''
+    Displays a vertical ramp pattern on the DMD.
+    The ramp goes from black to white.
+    '''
+    print("Displaying vertical ramp pattern.")
+    Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
+                                         FpgaTestPatternColor.White,   
+                                         FpgaTestPattern.VerticalRamp,  
+                                         255)
+    return Summary
+
+
+def LockMirrors():
+    '''
+    Locks the mirrors on the DLPDLCR230NPEVM.
+    This is useful for freezing the DMD mirrors.
+    '''
+    global locked
+    print("Locking mirrors.")
+    Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceLock)
+    locked = True
+    return Summary
+
+def UnlockMirrors():
+    '''
+    Unlocks the mirrors on the DLPDLCR230NPEVM.
+    This is useful for unfreezing the DMD mirrors.
+    '''
+    global locked
+    print("Unlocking mirrors.")
+    Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceUnlock)
+    locked = False
+    return Summary
+
+
+
+def Quit():
+    """
+    Exits the program.
+    """
+    print("Exiting...")
+    global locked
+    if locked:
+        UnlockMirrors()
+    DisplayBlack()
+    global run
+    run = False
+    return run
+
+
+
+def Menu():
+    print()
+    menu = """
+------------------------------
+             MENU                
+------------------------------
+   w    White             
+   b    Black             
+   c    Checkerboard      
+   h    Horizontal Ramp   
+   v    Vertical Ramp     
+   l    Lock Mirrors              
+   u    Unlock Mirrors            
+   q    Quit                      
+   m    Display Menu               
+------------------------------
+    """
+    print(menu)
+    return None
+
+
+def Call(name):
+    """
+    Calls the function associated with the name.
+    """
+    global locked
+    chars_to_check = 'uq'
+    # If we are not unlocking the mirrors or quitting,
+    # check if the mirrors are locked. 
+    # If they are locked, we cannot change the display.
+    if not any(char in name for char in chars_to_check) and locked: 
+        print("Mirrors are locked. Please unlock them first.")
+        return None
+    
+    # Otherwise, change the display if a valid option is selected
+    if name not in mode:
+        print("Invalid option. Please try again.")
+        return Menu()
+
+    func = mode[name]
+    return func()
+        
+        
+
+
+
+mode = {
+    'w' : DisplayWhite, 
+    'b' : DisplayBlack,
+    'c' : DisplayCheckerboard, 
+    'h' : DisplayHorizontalRamp, 
+    'v' : DisplayVerticalRamp,
+    'l' : LockMirrors, 
+    'u' : UnlockMirrors,
+    'q' : Quit, 
+    'm' : Menu,
+}
+
+
+# %%
+class Set(Enum):
+    Disabled = 0
+    Enabled = 1
+
+def main():
+        '''
+        Initializes the Raspberry Pi's GPIO lines to communicate with the DLPDLCR230NPEVM,
+        and configures the DLPDLCR230NPEVM to project RGB666 parallel video input received from the Raspberry Pi.
+        It is recommended to execute this script upon booting the Raspberry Pi.
+        '''
+
+        gpio_init_enable = True          # Set to FALSE to disable default initialization of Raspberry Pi GPIO pinouts. TRUE by default.
+        i2c_time_delay_enable = False    # Set to FALSE to prevent I2C commands from waiting. May lead to I2C bus hangups with some commands if FALSE.
+        i2c_time_delay = 0.8             # Lowering this value will speed up I2C commands. Too small delay may lead to I2C bus hangups with some commands.
+        protocoldata = ProtocolData()
+
+        def WriteCommand(writebytes, protocoldata):
+            '''
+            Issues a command over the software I2C bus to the DLPDLCR230NP EVM.
+            Set to write to Bus 7 by default
+            Some commands, such as Source Select (splash mode) may perform asynchronous access to the EVM's onboard flash memory.
+            If such commands are used, it is recommended to provide appropriate command delay to prevent I2C bus hangups.
+            '''
+            # print ("Write Command writebytes ", [hex(x) for x in writebytes])
+            if(i2c_time_delay_enable): 
+                time.sleep(i2c_time_delay)
+            i2c.write(writebytes)       
+            return
+
+        def ReadCommand(readbytecount, writebytes, protocoldata):
+            '''
+            Issues a read command over the software I2C bus to the DLPDLCR230NP EVM.
+            Set to read from Bus 7 by default
+            Some commands, such as Source Select (splash mode) may perform asynchronous access to the EVM's onboard flash memory.
+            If such commands are used, it is recommended to provide appropriate command delay to prevent I2C bus hangups.
+            '''
+            # print ("Read Command writebytes ", [hex(x) for x in writebytes])
+            if(i2c_time_delay_enable): 
+                time.sleep(i2c_time_delay)
+            i2c.write(writebytes) 
+            readbytes = i2c.read(readbytecount)
+            return readbytes
+
+        # ##### ##### Initialization for I2C ##### #####
+        # register the Read/Write Command in the Python library
+        DLPC343X_XPR4init(ReadCommand, WriteCommand)
+        i2c.initialize()
+        if(gpio_init_enable): 
+            InitGPIO()
+        # ##### ##### Command call(s) start here ##### #####  
+        # Start with a clean slate
+        Summary = WriteDisplayImageCurtain(1,Color.Black)
+        Summary = WriteFpgaTestPatternSelect(Set.Disabled,  FpgaTestPatternColor.Black,   FpgaTestPattern.SolidField,  0)
+        Summary = WriteSourceSelect(Source.FpgaTestPattern, Set.Disabled)
+        # Set the input image size to the DMD size (it is possible to input an
+        # image 1920x1080 pixels, which then means a single mirror displays 
+        # four pixels. Lets dumb down the DMD as much as possible, though.)
+        Summary = WriteInputImageSize(960, 540)
+        Summary = WriteDisplayImageCurtain(0,Color.Black)
+        
+        
+        
+        global run
+        run = True
+        global locked
+        locked = False
+        max_loop = 1000
+        loop = 0
+        Menu()
+        while run and (loop < max_loop):
+            ans = input()
+            Call(ans)
+            loop+=1
+
+        
+        
+        # ##### ##### Command call(s) end here ##### #####
+        i2c.terminate()
+
+
+if __name__ == "__main__" : main()
