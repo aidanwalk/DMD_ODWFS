@@ -11,12 +11,12 @@ It also provides a simple menu interface for user interaction.
 
 It is recommended to run the script test.py on boot.
 
-## 1. Setup the Raspberri Pi for communication with the EVM
+### 1. Setup the Raspberri Pi for communication with the EVM
 
 
-## 2. Run test.py
+### 2. Run test.py
 To control the DMD, run:
-/$ python test.py
+'$ python test.py
 
 
 ## REFERENCES
