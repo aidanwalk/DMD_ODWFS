@@ -1,6 +1,41 @@
-import struct
-import time
+"""
+This script is developed to enable low-level control the DLPDLCR230NPEVM DMD
+using a Raspberry Pi.
 
+It allows the user to interact with the DMD (Digital Micromirror Device) to 
+display various patterns on the fly. It enables critial functions for bench 
+testing such as mirror locking, turning all mirrors ON or OFF, and displaying
+various patterns such as checkerboard, horizontal ramp, and vertical ramp.
+It also provides a simple menu interface for user interaction.
+
+It is recommended to run this script on boot.
+
+
+-------------------------------------------------------------------------------
+REFERENCES
+-------------------------------------------------------------------------------
+The Raspberri Pi must be set up according to the TI User's Guide 
+(see section 9):
+"User's Guide  DLP® LightCrafterTM Display 230NP EVM"
+https://www.ti.com/lit/ug/dlpu103b/dlpu103b.pdf?ts=1750080331467&ref_url=https%253A%252F%252Fwww.ti.com%252Ftool%252FDLPDLCR230NPEVM
+
+
+For more information on the API, see TI Sotware Programmer's Guide:
+"DLPC3436, DLPC3426 Software Programmer's Guide"
+https://www.ti.com/lit/ug/dlpu078a/dlpu078a.pdf?ts=1750130382911
+
+
+API can be downloaded from the TI website:
+https://www.ti.com/tool/DLPDLCR230NPEVM
+
+
+
+@author: Aidan Walk
+date: 2025-06-19
+"""
+
+
+import time
 from enum import Enum
 
 import sys, os.path
@@ -24,6 +59,7 @@ def DisplayWhite():
                                          255)
     return Summary
 
+
 def DisplayBlack():
     """
     Turns all DMD mirrors to the 'OFF' position. 
@@ -34,6 +70,7 @@ def DisplayBlack():
                                          FpgaTestPattern.SolidField,  
                                          255)
     return Summary
+
 
 def DisplayCheckerboard():
     '''
@@ -84,6 +121,7 @@ def LockMirrors():
     locked = True
     return Summary
 
+
 def UnlockMirrors():
     '''
     Unlocks the mirrors on the DLPDLCR230NPEVM.
@@ -94,7 +132,6 @@ def UnlockMirrors():
     Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceUnlock)
     locked = False
     return Summary
-
 
 
 def Quit():
@@ -109,7 +146,6 @@ def Quit():
     global run
     run = False
     return run
-
 
 
 def Menu():
@@ -157,7 +193,10 @@ def Call(name):
         
 
 
-
+# Available modes for the DLPDLCR230NPEVM
+# Each mode corresponds to a function that changes the display.
+# The keys are the characters that the user can input to select the mode.
+# The values are the functions that will be called when the user selects the mode.
 mode = {
     'w' : DisplayWhite, 
     'b' : DisplayBlack,
@@ -171,10 +210,10 @@ mode = {
 }
 
 
-# %%
 class Set(Enum):
     Disabled = 0
     Enabled = 1
+
 
 def main():
         '''
@@ -234,10 +273,8 @@ def main():
         
         
         
-        global run
-        run = True
-        global locked
-        locked = False
+        global run; run = True
+        global locked; locked = False
         max_loop = 1000
         loop = 0
         Menu()
