@@ -137,28 +137,11 @@ def Quit():
 
 
 
-# Available modes for the DLPDLCR230NPEVM
-# Each mode corresponds to a function that changes the display.
-# The keys are the characters that the user can input to select the mode.
-# The values are the functions that will be called when the user selects the mode.
-mode = {
-    'up'    : MoveUp, 
-    'down'  : MoveDown,
-    'left'  : MoveLeft,
-    'right' : MoveRight,
-    'l'     : LockMirrors,
-    'r'     : RetryLock,
-    'u'     : UnlockMirrors,
-    'q'     : Quit,
-    'm'     : Menu,
-}
-
-
 def Call(key):
     """
     Calls the function associated with the name.
     """
-    global locked
+    global locked, mode
     chars_to_check = 'uqrm'
     # If we are not unlocking the mirrors or quitting,
     # check if the mirrors are locked. 
@@ -197,9 +180,8 @@ def square(cx=DisplaySize[1]//2, cy=DisplaySize[0]//2, size=sq_size):
 def StreamFrameBuffer():
     global buf, DisplaySize
     while True:
-        # create random noise (16 bit RGB)
+        # create a 32 bit image
         image = square()
-        # b = np.random.randint(0x10000,size=DisplaySize,dtype="uint32")
         # push to screen
         buf[:] = image
         time.sleep(0.1)
@@ -275,6 +257,23 @@ def make_parallel_mode():
 
 
 def main():
+    global mode 
+    # Available modes for the DLPDLCR230NPEVM
+    # Each mode corresponds to a function that changes the display.
+    # The keys are the characters that the user can input to select the mode.
+    # The values are the functions that will be called when the user selects the mode.
+    mode = {
+        'up'    : MoveUp, 
+        'down'  : MoveDown,
+        'left'  : MoveLeft,
+        'right' : MoveRight,
+        'l'     : LockMirrors,
+        'r'     : RetryLock,
+        'u'     : UnlockMirrors,
+        'q'     : Quit,
+        'm'     : Menu,
+    }
+    
     # Enable screen parallel mode
     print("Initializing parallel mode...")
     make_parallel_mode()
