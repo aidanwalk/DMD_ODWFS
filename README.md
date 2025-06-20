@@ -26,7 +26,22 @@ To control the DMD, run: <br />
 
 On Startup, this will display a menu of DMD command options. Enter 'm' at any 
 time to view this menu again. 
-
+```
+------------------------------
+             MENU                
+------------------------------
+   w    White             
+   b    Black             
+   c    Checkerboard      
+   h    Horizontal Ramp   
+   v    Vertical Ramp     
+   l    Lock Mirrors              
+   r    Retry Lock
+   u    Unlock Mirrors            
+   q    Quit                      
+   m    Display Menu               
+------------------------------
+```
 
 
 ## REFERENCES
