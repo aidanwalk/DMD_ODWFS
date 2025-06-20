@@ -193,7 +193,6 @@ def make_parallel_mode():
         '''
         Initializes the Raspberry Pi's GPIO lines to communicate with the DLPDLCR230NPEVM,
         and configures the DLPDLCR230NPEVM to project RGB666 parallel video input received from the Raspberry Pi.
-        It is recommended to execute this script upon booting the Raspberry Pi.
         '''
 
         gpio_init_enable = True          # Set to FALSE to disable default initialization of Raspberry Pi GPIO pinouts. TRUE by default.
