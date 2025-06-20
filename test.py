@@ -46,6 +46,8 @@ from api.dlpc343x_xpr4_evm import *
 from linuxi2c import *
 import i2c
 
+from thread import main as DisplaySquare
+
 
 
 def DisplayWhite():
@@ -174,7 +176,8 @@ def Menu():
              MENU                
 ------------------------------
    w    White             
-   b    Black             
+   b    Black
+   S    Square             
    c    Checkerboard      
    h    Horizontal Ramp   
    v    Vertical Ramp     

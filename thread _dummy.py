@@ -21,13 +21,12 @@ https://gist.github.com/Quasimondo/e47a5be0c2fa9a3ef80c433e3ee2aead
 import numpy as np
 import os
 import time
-from sshkeyboard import listen_keyboard
 import threading
 
 import init_parallel_mode
-mode = 'Dummy'
+from sshkeyboard import listen_keyboard
 
-global DisplaySize; DisplaySize = (984, 1824)  # Set the display size to match your framebuffer resolution
+global DisplaySize; DisplaySize = (1080, 1920)  # Set the display size to match your framebuffer resolution
 
 def press(key):
     global right, up
@@ -66,62 +65,39 @@ def square(cx=DisplaySize[1]//2, cy=DisplaySize[0]//2, size=200):
 
 
 def StreamFrameBuffer():
-    global buf, DisplaySize
-    try:
-        while True:
-            # create random noise (16 bit RGB)
-            image = square()
-            # b = np.random.randint(0x10000,size=DisplaySize,dtype="uint32")
-            # push to screen
-            buf[:] = image
-            time.sleep(0.1)
+    while True:
+        print('Doing Something')
+        time.sleep(1)
+        print(up, right)
 
-    except KeyboardInterrupt:
-        pass
-    return
 
 
 
 def main():
-    # Enable screen parallel mode
-    if mode == 'Dummy':
-        print("Running in dummy mode, no parallel port access")
-    else:
-        print("Initializing parallel mode...")
-        init_parallel_mode.main()
-    
-    # this turns off the cursor blink:
-    os.system ("TERM=linux setterm -foreground black -clear all >/dev/tty0")
-
-    # this is the frambuffer for analog video output - note that this is a 16 bit RGB
-    # other setups will likely have a different format and dimensions which you can check with
-    # fbset -fb /dev/fb0 
-    global buf
-    buf = np.memmap('/dev/fb0', dtype='uint32',mode='w+', shape=DisplaySize)
-
-    # fill with white
-    buf[:] = 0xffff
-
     loop = True
     global stop; stop = False
     global right, up
     right = 0
     up = 0
 
+    
+    # Thread to run StreamFrameBuffer
+    print("Creating StreamFrameBuffer thread...")
+    # Create a thread to run the StreamFrameBuffer function
+    # This will allow the framebuffer to be updated in the background
+    # while we can still interact with the main program
+    threading1 = threading.Thread(target=StreamFrameBuffer)
+    threading1.daemon = True  # This allows the thread to exit when the main program exits
+    threading1.name = "StreamFrameBuffer"
+    print("Starting StreamFrameBuffer thread...")
+    # start the thread
+    threading1.start()
+    
+    
     while loop:
-        print("Press Ctrl-C to stop")
-        StreamFrameBuffer()
-        ans = input('Continue? (y/n), move? (m): ')
-        if ans == 'm':
-            print("Press arrow keys to move the square, 'q' to quit")
-            listen_keyboard(on_press=press, until='q')
-            continue
-        if ans.lower() != 'y':
-            loop = False
-
-
-    # turn on the cursor again:    
-    os.system("TERM=linux setterm -foreground white -clear all >/dev/tty0")
+        listen_keyboard(on_press=press, until='q')
+        loop=False
+    print("Exiting main loop...")
 
 
 
