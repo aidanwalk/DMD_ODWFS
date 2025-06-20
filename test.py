@@ -46,7 +46,7 @@ from api.dlpc343x_xpr4_evm import *
 from linuxi2c import *
 import i2c
 
-from thread import main as DisplaySquare
+from sshkeyboard import listen_keyboard, stop_listening
 
 
 
@@ -159,6 +159,7 @@ def Quit():
     """
     Exits the program.
     """
+    stop_listening()
     print("Exiting...")
     global locked
     if locked:
@@ -298,12 +299,13 @@ def main():
         
         global run; run = True
         global locked; locked = False
-        max_loop = 1000
+        max_loop = 100_000
         loop = 0
         Menu()
         while run and (loop < max_loop):
-            ans = input()
-            Call(ans)
+            listen_keyboard(on_press=Call, 
+                            delay_second_char=0.1,
+                            delay_other_chars=0.05,)
             loop+=1
 
         

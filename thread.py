@@ -310,11 +310,13 @@ def main():
     print("Starting StreamFrameBuffer thread...")
     # start the thread
     threading1.start()
-    
+    time.sleep(0.5)
     Menu()
     # Listen for keyboard input
     while loop:
-        listen_keyboard(on_press=Call)
+        listen_keyboard(on_press=Call, 
+                        delay_second_char=0.1,
+                        delay_other_chars=0.05,)
         loop = False
         
     
