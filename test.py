@@ -176,8 +176,7 @@ def Menu():
              MENU                
 ------------------------------
    w    White             
-   b    Black
-   S    Square             
+   b    Black        
    c    Checkerboard      
    h    Horizontal Ramp   
    v    Vertical Ramp     
@@ -197,7 +196,7 @@ def Call(name):
     Calls the function associated with the name.
     """
     global locked
-    chars_to_check = 'uq'
+    chars_to_check = 'uqrm'
     # If we are not unlocking the mirrors or quitting,
     # check if the mirrors are locked. 
     # If they are locked, we cannot change the display.
@@ -307,7 +306,6 @@ def main():
             Call(ans)
             loop+=1
 
-        
         
         # ##### ##### Command call(s) end here ##### #####
         i2c.terminate()

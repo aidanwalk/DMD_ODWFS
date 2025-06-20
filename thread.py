@@ -1,23 +1,12 @@
 """
-Taken from Quasimondo 2025-06-19
+This script is not integrated into test.py as it requires streaming
+to the framebuffer of the Raspberry Pi, then the Raspberry Pi 
+transmits this to the EVM .
+
+Streaming to the Raspberry Pi Frame Buffer from Quasimondo 2025-06-19
 https://gist.github.com/Quasimondo/e47a5be0c2fa9a3ef80c433e3ee2aead
 """
-# After a lot of searching and false or complicated leads I found this brilliant method
-# that allows to use a numpy array to get direct read/write access to the rpi framebuffer
-# https://stackoverflow.com/questions/58772943/how-to-show-an-image-direct-from-memory-on-rpi
-# I thought it is worth sharing again since so it might someone else some research time
-#
-# The only caveat is that you will have to run this as root (sudo python yourscript.py), 
-# But you can get around this if you add the current user to the "video" group like this:
-# usermod -a -G video [user]
-# source: https://medium.com/@avik.das/writing-gui-applications-on-the-raspberry-pi-without-a-desktop-environment-8f8f840d9867
-# 
-# in order to clear the cursor you probably also have to add the user to the tty group
-# usermod -a -G tty [user]
-# Potentially also to the dialout group (not so sure about that, but I did it before I realized that a reboot is required)
-# usermod -a -G dialout [user]
-# IMPORTANT you will have to reboot once for this to take effect
-import struct
+
 import time
 import numpy as np
 import os
@@ -32,13 +21,20 @@ from api.dlpc343x_xpr4 import *
 from api.dlpc343x_xpr4_evm import *
 from linuxi2c import *
 import i2c
-from test import LockMirrors, UnlockMirrors, RetryLock
 
-from sshkeyboard import listen_keyboard
+from sshkeyboard import listen_keyboard, stop_listening
 
+# ===============================================================================
+# GLOBAL VARIABLES -- CHANGE ME
+# ===============================================================================
 # Set the display size to match your framebuffer resolution
+# This must match resolution listed from:
+#     $ fbset -fb /dev/fb0
+# "geometry"
 global DisplaySize; DisplaySize = (1080, 1920)
-
+global step; step=250
+global sq_size; sq_size=500
+# ===============================================================================
 
 
 class Set(Enum):
@@ -47,34 +43,140 @@ class Set(Enum):
 
 
 
-def press(key):
-    global right, up
-    if key == 'right':
-        right += 10
-    elif key == 'left':
-        right -= 10
-    elif key == 'up':
-        up += 10
-    elif key == 'down':
-        up -= 10
-    elif key == 'l':
-        print("Locking mirrors...")
+def LockMirrors():
+    '''
+    Locks the mirrors on the DLPDLCR230NPEVM.
+    This is useful for freezing the DMD mirrors.
+    '''
+    global locked
+    print("Locking mirrors.")
+    Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceLock)
+    locked = True
+    return Summary
+
+
+def RetryLock():
+    '''
+    Retries to lock the mirrors on the DMD. 
+    Often times you may get unlucky and lock the mirrors on the wrong side of 
+    the duty cycle. 
+    
+    Quickly unlocks the mirros and then locks them again.
+    '''
+    global locked
+    if not locked:
+        print("The mirrors were not locked. Locking.")
         LockMirrors()
-    elif key == 'u':
-        print("Unlocking mirrors...")
-        UnlockMirrors()
-    elif key == 'r':
-        print("Retry locking mirrors...")
-        RetryLock()
-    elif key == 'q':
-        print("Exiting...")
+    
     else:
-        print(f"Unknown key: {key}")
-        return
+        UnlockMirrors()
+        time.sleep(0.25)
+        Summary = LockMirrors()
+        return Summary
+
+
+def UnlockMirrors():
+    '''
+    Unlocks the mirrors on the DLPDLCR230NPEVM.
+    This is useful for unfreezing the DMD mirrors.
+    '''
+    global locked
+    print("Unlocking mirrors.")
+    Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceUnlock)
+    locked = False
+    return Summary
+
+
+def Menu():
+    menu = """
+------------------------------
+             MENU                
+------------------------------
+ right  Move Right
+ left   Move Left             
+ up     Move Up
+ down   Move Down
+ l      Lock Mirrors
+ r      Retry Lock
+ u      Unlock Mirrors
+ m      Display Menu                          
+------------------------------
+    """
+    print(menu)
+    return None
+
+
+def MoveUp():
+    global up
+    up += step
     print(f"Offset: x={right}, y={up}")
+    return None
+
+def MoveDown():
+    global up
+    up -= step
+    print(f"Offset: x={right}, y={up}")
+    return None
+
+def MoveRight():
+    global right
+    right += step
+    print(f"Offset: x={right}, y={up}")
+    return None
+
+def MoveLeft():
+    global right
+    right -= step
+    print(f"Offset: x={right}, y={up}")
+    return None
+
+def Quit():
+    stop_listening()
+    print("Exiting...")
+    return None
+
+
+
+# Available modes for the DLPDLCR230NPEVM
+# Each mode corresponds to a function that changes the display.
+# The keys are the characters that the user can input to select the mode.
+# The values are the functions that will be called when the user selects the mode.
+mode = {
+    'up'    : MoveUp, 
+    'down'  : MoveDown,
+    'left'  : MoveLeft,
+    'right' : MoveRight,
+    'l'     : LockMirrors,
+    'r'     : RetryLock,
+    'u'     : UnlockMirrors,
+    'q'     : Quit,
+    'm'     : Menu,
+}
+
+
+def Call(key):
+    """
+    Calls the function associated with the name.
+    """
+    global locked
+    chars_to_check = 'uqrm'
+    # If we are not unlocking the mirrors or quitting,
+    # check if the mirrors are locked. 
+    # If they are locked, we cannot change the display.
+    if not any(char in key for char in chars_to_check) and locked: 
+        print("Mirrors are locked. Please unlock them first.")
+        return None
+    
+    # Otherwise, change the display if a valid option is selected
+    if key not in mode:
+        print("Invalid option. Please try again.")
+        return Menu()
+    
+    func = mode[key]
+    return func()
     
 
-def square(cx=DisplaySize[1]//2, cy=DisplaySize[0]//2, size=200):
+def square(cx=DisplaySize[1]//2, cy=DisplaySize[0]//2, size=sq_size):
     """Create a square image with a given center and size."""
     # Create an empty array with the specified size
     global right, up
@@ -87,7 +189,7 @@ def square(cx=DisplaySize[1]//2, cy=DisplaySize[0]//2, size=200):
     end_y = cy + size // 2 - up
     
     # Fill the square area with white color (255, 255, 255)
-    img[start_y:end_y, start_x:end_x] = 2**16-1
+    img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
     
     return img
 
@@ -101,12 +203,6 @@ def StreamFrameBuffer():
         # push to screen
         buf[:] = image
         time.sleep(0.1)
-
-
-
-
-
-
 
 
 
@@ -177,6 +273,7 @@ def make_parallel_mode():
         
 
 
+
 def main():
     # Enable screen parallel mode
     print("Initializing parallel mode...")
@@ -185,16 +282,16 @@ def main():
     # this turns off the cursor blink:
     os.system ("TERM=linux setterm -foreground black -clear all >/dev/tty0")
 
-    # this is the frambuffer for analog video output - note that this is a 16 bit RGB
+    # this is the frambuffer for analog video output - note that this is a 32 bit RGB
     # other setups will likely have a different format and dimensions which you can check with
     # fbset -fb /dev/fb0 
+    # The last two numbers of "geometry" are the bit depth
     global buf
     buf = np.memmap('/dev/fb0', dtype='uint32',mode='w+', shape=DisplaySize)
 
     # fill with white
-    buf[:] = 0xffff
+    buf[:] = 0xffffffff
 
-    
     # ######## START TASK ########
     
     loop = True
@@ -202,6 +299,8 @@ def main():
     global right, up
     right = 0
     up = 0
+    global locked; locked = False
+    global sq_size
     # Thread to run StreamFrameBuffer
     print("Creating StreamFrameBuffer thread...")
     # Create a thread to run the StreamFrameBuffer function
@@ -214,13 +313,18 @@ def main():
     # start the thread
     threading1.start()
     
+    Menu()
     # Listen for keyboard input
     while loop:
-        listen_keyboard(on_press=press, until='q')
+        listen_keyboard(on_press=Call)
         loop = False
         
-        
+    
     # ######## END TASK ########
+    UnlockMirrors()
+    sq_size = 0
+    time.sleep(0.5)
+    buf[:] = 0x00000000
     # turn on the cursor again:    
     os.system("TERM=linux setterm -foreground white -clear all >/dev/tty0")
     i2c.terminate()
