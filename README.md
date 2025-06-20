@@ -30,7 +30,7 @@ time to view this menu again.
 ------------------------------
              MENU                
 ------------------------------
-   w    White             
+   w    White  
    b    Black             
    c    Checkerboard      
    h    Horizontal Ramp   
