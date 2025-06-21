@@ -54,11 +54,11 @@ def DisplayWhite():
     """
     Turns all DMD mirrors to the 'ON' position. 
     """
-    print("Setting all mirrors to ON position (white).")
     Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
                                          FpgaTestPatternColor.White,
                                          FpgaTestPattern.SolidField,  
                                          255)
+    print("All mirrors set to ON position (white).")
     return Summary
 
 
@@ -66,11 +66,11 @@ def DisplayBlack():
     """
     Turns all DMD mirrors to the 'OFF' position. 
     """
-    print("Setting all mirrors to OFF position (black).")
     Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
                                          FpgaTestPatternColor.Black,
                                          FpgaTestPattern.SolidField,  
                                          255)
+    print("All mirrors set to OFF position (black).")
     return Summary
 
 
@@ -78,11 +78,11 @@ def DisplayCheckerboard():
     '''
     Displays a checkerboard pattern on the DMD.
     '''
-    print("Displaying checkerboard pattern.")
     Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
                                          FpgaTestPatternColor.White,   
                                          FpgaTestPattern.Checkerboard,  
                                          50)
+    print("Now displaying checkerboard pattern.")
     return Summary
 
 
@@ -91,11 +91,11 @@ def DisplayHorizontalRamp():
     Displays a horizontal ramp pattern on the DMD.
     The ramp goes from black to white.
     '''
-    print("Displaying horizontal ramp pattern.")
     Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
                                          FpgaTestPatternColor.White,   
                                          FpgaTestPattern.HorizontalRamp,  
                                          255)
+    print("Now displaying horizontal ramp pattern.")
     return Summary
 
 
@@ -104,11 +104,11 @@ def DisplayVerticalRamp():
     Displays a vertical ramp pattern on the DMD.
     The ramp goes from black to white.
     '''
-    print("Displaying vertical ramp pattern.")
     Summary = WriteFpgaTestPatternSelect(Set.Disabled,  
                                          FpgaTestPatternColor.White,   
                                          FpgaTestPattern.VerticalRamp,  
                                          255)
+    print("Now displaying vertical ramp pattern.")
     return Summary
 
 
@@ -118,8 +118,8 @@ def LockMirrors():
     This is useful for freezing the DMD mirrors.
     '''
     global locked
-    print("Locking mirrors.")
     Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceLock)
+    print("Mirrors locked.")
     locked = True
     return Summary
 

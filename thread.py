@@ -49,8 +49,8 @@ def LockMirrors():
     This is useful for freezing the DMD mirrors.
     '''
     global locked
-    print("Locking mirrors.")
     Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceLock)
+    print("Mirrors locked.")
     locked = True
     return Summary
 
@@ -65,7 +65,7 @@ def RetryLock():
     '''
     global locked
     if not locked:
-        print("The mirrors were not locked. Locking.")
+        print("The mirrors were not locked.")
         LockMirrors()
     
     else:
@@ -81,8 +81,8 @@ def UnlockMirrors():
     This is useful for unfreezing the DMD mirrors.
     '''
     global locked
-    print("Unlocking mirrors.")
     Summary = WriteMirrorLock(MirrorLockOptions.DmdInterfaceUnlock)
+    print("Mirrors unlocked.")
     locked = False
     return Summary
 
@@ -92,6 +92,7 @@ def Menu():
 ------------------------------
              MENU                
 ------------------------------
+ s      Change Shape
  right  Move Right
  left   Move Left             
  up     Move Up
@@ -136,7 +137,6 @@ def Quit():
     return None
 
 
-
 def Call(key):
     """
     Calls the function associated with the name.
@@ -159,29 +159,85 @@ def Call(key):
     return func()
     
 
-def square(cx=DisplaySize[1]//2, cy=DisplaySize[0]//2, size=sq_size):
-    """Create a square image with a given center and size."""
-    # Create an empty array with the specified size
-    global right, up
-    img = np.zeros(DisplaySize, dtype='uint32')
+
+
+
+
+class shapes:
+    """
+    A class to hold the shapes to display.
+    This is used to create a list of shapes that can be displayed.
+    """
+    def __init__(self):
+        self.shapes = [self.square, self.half]
+        self.shape_idx = 0 
+        self.shape = self.__getitem__(self.shape_idx) 
     
-    # Calculate the coordinates of the square
-    start_x = cx - size // 2 + right
-    end_x = cx + size // 2 + right
-    start_y = cy - size // 2 - up
-    end_y = cy + size // 2 - up
+    def __getitem__(self, index):
+        return self.shapes[index]
+
+    def __len__(self):
+        return len(self.shapes)
     
-    # Fill the square area with white color (255, 255, 255)
-    img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
-    
-    return img
+    def reset_shapes(self):
+        """
+        Resets the shapes to the initial state.
+        """
+        global right, up
+        right = 0
+        up = 0
+        return None
+
+    def change_shape(self):
+        """
+        Changes the shape to display.
+        """
+        self.reset_shapes()
+        # Get the next shape in the list
+        self.shape_idx = (self.shape_idx + 1) % len(self.shapes)
+        print(f"Changing shape to {self.shapes[self.shape_idx]}")
+        self.shape = self.__getitem__(self.shape_idx)
+        
+        return None
+        
+    def square(self, cx=DisplaySize[1]//2, cy=DisplaySize[0]//2, size=sq_size):
+        """Create a square image with a given center and size."""
+        # Create an empty array with the specified size
+        global right, up
+        img = np.zeros(DisplaySize, dtype='uint32')
+        
+        # Calculate the coordinates of the square
+        start_x = cx - size // 2 + right
+        end_x = cx + size // 2 + right
+        start_y = cy - size // 2 - up
+        end_y = cy + size // 2 - up
+        
+        # Fill the square area with white color (255, 255, 255)
+        img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
+        
+        return img
+
+
+    def half(self):
+        """ Create an image where half of the screen is white and the other half is black. """
+        global right
+        img = np.zeros(DisplaySize, dtype='uint32')
+        
+        # Calculate the width of half the screen
+        half_width = DisplaySize[1] // 2
+        
+        # Fill the left half with white color (255, 255, 255)
+        img[:, :half_width+right] = 0xffffffff  #2**32-1
+        
+        return img
 
 
 def StreamFrameBuffer():
-    global buf, DisplaySize
+    global buf, DisplaySize, shape_maker
     while True:
         # create a 32 bit image
-        image = square()
+        image = shape_maker.shape()
+        # image = square()
         # push to screen
         buf[:] = image
         time.sleep(0.1)
@@ -256,7 +312,10 @@ def make_parallel_mode():
 
 
 def main():
-    global mode 
+    global mode
+    # Define the shapes to display
+    global shape_maker
+    shape_maker = shapes()
     # Available modes for the DLPDLCR230NPEVM
     # Each mode corresponds to a function that changes the display.
     # The keys are the characters that the user can input to select the mode.
@@ -271,7 +330,10 @@ def main():
         'u'     : UnlockMirrors,
         'q'     : Quit,
         'm'     : Menu,
+        's'     : shape_maker.change_shape,
     }
+
+    
     
     # Enable screen parallel mode
     print("Initializing parallel mode...")
