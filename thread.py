@@ -32,7 +32,7 @@ from sshkeyboard import listen_keyboard, stop_listening
 #     $ fbset -fb /dev/fb0
 # "geometry"
 global DisplaySize; DisplaySize = (1080, 1920)
-global step; step=250
+global step; step=1
 global sq_size; sq_size=500
 # ===============================================================================
 
@@ -93,6 +93,9 @@ def Menu():
              MENU                
 ------------------------------
  s      Change Shape
+ 1      Change Step Size To 1
+ 2      Change Step Size To 10
+ 3      Change Step Size To 100
  right  Move Right
  left   Move Left             
  up     Move Up
@@ -130,6 +133,24 @@ def MoveLeft():
     right -= step
     print(f"Offset: x={right}, y={up}")
     return None
+
+def change_step_1():
+    global step
+    step = 1
+    print(f'Step size changed to {step}')
+    return None
+
+def change_step_10():
+    global step
+    step = 10
+    print(f'Step size changed to {step}')
+    return None
+
+def change_step_100():
+    global step
+    step = 100
+    print(f'Step size changed to {step}')
+    return step
 
 def Quit():
     stop_listening()
@@ -248,7 +269,7 @@ def StreamFrameBuffer():
 def make_parallel_mode():
         '''
         Initializes the Raspberry Pi's GPIO lines to communicate with the DLPDLCR230NPEVM,
-        and configures the DLPDLCR230NPEVM to project RGB666 parallel video input received from the Raspberry Pi.
+        and configures the DLPDLCR2OA30NPEVM to project RGB666 parallel video input received from the Raspberry Pi.
         '''
 
         gpio_init_enable = True          # Set to FALSE to disable default initialization of Raspberry Pi GPIO pinouts. TRUE by default.
@@ -331,6 +352,9 @@ def main():
         'q'     : Quit,
         'm'     : Menu,
         's'     : shape_maker.change_shape,
+        '1'     : change_step_1,
+        '2'     : change_step_10,
+        '3'     : change_step_100,
     }
 
     
@@ -377,7 +401,7 @@ def main():
     # Listen for keyboard input
     while loop:
         listen_keyboard(on_press=Call, 
-                        delay_second_char=0.1,
+                        delay_second_char=0.05,
                         delay_other_chars=0.05,)
         loop = False
         
