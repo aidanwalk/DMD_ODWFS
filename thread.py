@@ -394,6 +394,9 @@ def main():
     threading1.daemon = True  # This allows the thread to exit when the main program exits
     threading1.name = "StreamFrameBuffer"
     print("Starting StreamFrameBuffer thread...")
+    print()
+    print("*** IF DMD STREAMING HAS NOT STARTED, OPEN VNC VIEWER AND CONNECT TO THE RASPBERRY PI. THIS WILL FORCE FRAME BUFFER TO BEGIN STREAM ***")
+    print()
     # start the thread
     threading1.start()
     time.sleep(0.5)
