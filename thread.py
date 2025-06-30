@@ -32,7 +32,9 @@ from sshkeyboard import listen_keyboard, stop_listening
 #     $ fbset -fb /dev/fb0
 # "geometry"
 global DisplaySize; DisplaySize = (1080, 1920)
-global step; step=1
+# Initial step size for moving the shape
+global step; step=100
+# Initial size of the square shape
 global sq_size; sq_size=500
 # ===============================================================================
 
