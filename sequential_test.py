@@ -188,24 +188,22 @@ class Cmd():
         def change_step_1():
             step = 1
             print(f'Step size changed to {step}')
-            return None
+            return step
 
         def change_step_10():
-            global step
             step = 10
             print(f'Step size changed to {step}')
-            return None
+            return step
 
         def change_step_100():
-            global step
             step = 100
             print(f'Step size changed to {step}')
             return step
         
         
-        if step == 1: change_step_10()
-        elif step == 10: change_step_100()
-        else: change_step_1()
+        if step == 1: step = change_step_10()
+        elif step == 10: step = change_step_100()
+        else: step = change_step_1()
         
         return None
 
@@ -241,164 +239,6 @@ class Cmd():
 
 
 
-class knife:
-    def __init__(self, cx=DisplaySize[1]//2, cy=DisplaySize[0]//2):
-        """Create a knife image with a given center."""
-        # Create an empty array with the specified size
-        global right, up
-        self.cx = DisplaySize[1] // 2
-        self.cy = DisplaySize[0] // 2
-        self.edge_func = self.edge1
-        
-    def __call__(self):
-        """ Call the knife object to get the image."""
-        return self.get_image()
-    
-    def edge1(self):
-        """ Create an image of edge 1 """
-        y0 = 0
-        y1 = DisplaySize[0]
-        x0 = self.cx
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def edge2(self):
-        """ Create an image of edge 2 """
-        y0 = 0
-        y1 = DisplaySize[0]
-        x0 = 0
-        x1 = self.cx
-        return y0, y1, x0, x1
-    
-    def edge3(self):
-        """ Create an image of edge 3 """
-        y0 = self.cy
-        y1 = DisplaySize[0]
-        x0 = 0
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def edge4(self):
-        """ Create an image of edge 4 """
-        y0 = 0
-        y1 = self.cy
-        x0 = 0
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def get_image(self):
-        global right, up
-        self.cx = DisplaySize[1] // 2 + right
-        self.cy = DisplaySize[0] // 2 + up
-        img = np.zeros(DisplaySize, dtype='uint32')
-        start_y, end_y, start_x, end_x = self.edge_func()
-        # Fill the image area with white color (255, 255, 255)
-        img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
-        
-        return img
-    
-    
-    
-class pyramid:
-    def __init__(self, cx=DisplaySize[1]//2, cy=DisplaySize[0]//2):
-        """Create a knife image with a given center."""
-        # Create an empty array with the specified size
-        global right, up
-        self.cx = DisplaySize[1] // 2
-        self.cy = DisplaySize[0] // 2
-        self.edge_func = self.edge1
-        
-    def __call__(self):
-        """Call the pyramid object to get the image."""
-        return self.get_image()
-    
-    def edge1(self):
-        """ Create an image of edge 1 """
-        y0 = self.cy
-        y1 = DisplaySize[0]
-        x0 = self.cx
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def edge2(self):
-        """ Create an image of edge 2 """
-        y0 = self.cy
-        y1 = DisplaySize[0]
-        x0 = 0
-        x1 = self.cx
-        return y0, y1, x0, x1
-    
-    def edge3(self):
-        """ Create an image of edge 3 """
-        y0 = 0
-        y1 = self.cy
-        x0 = 0
-        x1 = self.cx
-        return y0, y1, x0, x1
-    
-    def edge4(self):
-        """ Create an image of edge 4 """
-        y0 = 0
-        y1 = self.cy
-        x0 = self.cx
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def get_image(self):
-        global right, up
-        self.cx = DisplaySize[1] // 2 + right
-        self.cy = DisplaySize[0] // 2 + up
-        img = np.zeros(DisplaySize, dtype='uint32')
-        start_y, end_y, start_x, end_x = self.edge_func()
-        # Fill the image area with white color (255, 255, 255)
-        img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
-        
-        return img
-
-
-
-class shapes:
-    """
-    A class to hold the shapes to display.
-    This is used to create a list of shapes that can be displayed.
-    """
-    def __init__(self):
-        self.k = knife()
-        self.p = pyramid()
-        self.shape = self.k
-
-
-    def change_to_knife(self):
-        self.shape = self.k
-        
-    def change_to_pyramid(self):
-        self.shape = self.p
-
-    # def __len__(self):
-    #     return len(self.shapes)
-    
-    def reset_shapes(self):
-        """
-        Resets the shapes to the initial state.
-        """
-        global right, up
-        right = 0
-        up = 0
-        return None
-    
-    
-    def change_to_edge_1(self):
-        self.shape.edge_func = self.shape.edge1
-        
-    def change_to_edge_2(self):
-        self.shape.edge_func = self.shape.edge2
-
-    def change_to_edge_3(self):
-        self.shape.edge_func = self.shape.edge3
-        
-    def change_to_edge_4(self):
-        self.shape.edge_func = self.shape.edge4
-
 
 
 
@@ -412,8 +252,8 @@ def StreamFrameBuffer():
         # buf[:] = image
         
         pim.set_data(image)
-        plt.draw()
-        plt.pause(0.1)
+        plt.savefig("test.png")
+        time.sleep(1)
         
 
 def make_plot():
@@ -421,9 +261,8 @@ def make_plot():
     plt.figure(figsize=(10, 6))
     plt.axis('off')  # Hide the axes
     plt.title("DLPDLCR230NPEVM Display")
-    pim = plt.imshow(np.zeros(DisplaySize, dtype='uint32'), cmap='gray', origin='lower')
-    plt.ion()  # Turn on interactive mode
-    plt.show()
+    pim = plt.imshow(np.zeros(DisplaySize, dtype='uint32'), cmap='gray', origin='lower',
+                     vmin=0, vmax=2**32-1)
     return pim
 
       
@@ -515,7 +354,12 @@ def main():
     time.sleep(0.5)
     Menu()
     
-        
+    # Listen for keyboard input
+    while loop:
+        listen_keyboard(on_press=Cmd.Call,
+                        delay_second_char=0.05,
+                        delay_other_chars=0.05,)
+        loop = False
     
     # ######## END TASK ########
     sq_size = 0

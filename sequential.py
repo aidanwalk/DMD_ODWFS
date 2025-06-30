@@ -186,24 +186,22 @@ class Cmd():
         def change_step_1():
             step = 1
             print(f'Step size changed to {step}')
-            return None
+            return step
 
         def change_step_10():
-            global step
             step = 10
             print(f'Step size changed to {step}')
-            return None
+            return step
 
         def change_step_100():
-            global step
             step = 100
             print(f'Step size changed to {step}')
             return step
         
         
-        if step == 1: change_step_10()
-        elif step == 10: change_step_100()
-        else: change_step_1()
+        if step == 1: step = change_step_10()
+        elif step == 10: step = change_step_100()
+        else: step = change_step_1()
         
         return None
 
@@ -244,8 +242,8 @@ class knife:
         """Create a knife image with a given center."""
         # Create an empty array with the specified size
         global right, up
-        self.cx = DisplaySize[1] // 2 + right
-        self.cy = DisplaySize[0] // 2 + up
+        self.cx = DisplaySize[1] // 2
+        self.cy = DisplaySize[0] // 2
         self.edge_func = self.edge1
         
     def __call__(self):
@@ -286,8 +284,8 @@ class knife:
     
     def get_image(self):
         global right, up
-        self.cx = DisplaySize[1] // 2
-        self.cy = DisplaySize[0] // 2
+        self.cx = DisplaySize[1] // 2 + right
+        self.cy = DisplaySize[0] // 2 + up
         img = np.zeros(DisplaySize, dtype='uint32')
         start_y, end_y, start_x, end_x = self.edge_func()
         # Fill the image area with white color (255, 255, 255)
