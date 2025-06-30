@@ -365,9 +365,11 @@ class shapes:
 
 
     def change_to_knife(self):
+        print("Changing to knife edge shape.")
         self.shape = self.k
         
     def change_to_pyramid(self):
+        print("Changing to pyramid shape.")
         self.shape = self.p
 
     # def __len__(self):
@@ -384,15 +386,19 @@ class shapes:
     
     
     def change_to_edge_1(self):
+        print("Changing to edge 1.")
         self.shape.edge_func = self.shape.edge1
         
     def change_to_edge_2(self):
+        print("Changing to edge 2.")
         self.shape.edge_func = self.shape.edge2
 
     def change_to_edge_3(self):
+        print("Changing to edge 3.")
         self.shape.edge_func = self.shape.edge3
         
     def change_to_edge_4(self):
+        print("Changing to edge 4.")
         self.shape.edge_func = self.shape.edge4
 
 
@@ -503,6 +509,24 @@ def Menu():
     return None
 
 
+def initialize_offsets():
+    init_offset = input("Enter the initial offset (x,y) in pixels (default is 0,0): ")
+    if init_offset:
+        try:
+            right, up = map(int, init_offset.split(','))
+            print(f"Initial offset set to x={right}, y={up}")
+        except ValueError:
+            print("Invalid input. Using default offset of x=0, y=0.")
+            right = 0
+            up = 0
+    else:
+        print("Using default offset of x=0, y=0.")
+        right = 0
+        up = 0
+        
+    return right, up
+
+
 
 def main():
     global mode
@@ -556,8 +580,7 @@ def main():
     loop = True
     global stop; stop = False
     global right, up
-    right = 0
-    up = 0
+    right, up = initialize_offsets()
     global locked; locked = False
     global sq_size
     # Thread to run StreamFrameBuffer

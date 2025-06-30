@@ -240,6 +240,172 @@ class Cmd():
 
 
 
+class knife:
+    def __init__(self, cx=DisplaySize[1]//2, cy=DisplaySize[0]//2):
+        """Create a knife image with a given center."""
+        # Create an empty array with the specified size
+        global right, up
+        self.cx = DisplaySize[1] // 2
+        self.cy = DisplaySize[0] // 2
+        self.edge_func = self.edge1
+        
+    def __call__(self):
+        """ Call the knife object to get the image."""
+        return self.get_image()
+    
+    def edge1(self):
+        """ Create an image of edge 1 """
+        y0 = 0
+        y1 = DisplaySize[0]
+        x0 = self.cx
+        x1 = DisplaySize[1]
+        return y0, y1, x0, x1
+    
+    def edge2(self):
+        """ Create an image of edge 2 """
+        y0 = 0
+        y1 = DisplaySize[0]
+        x0 = 0
+        x1 = self.cx
+        return y0, y1, x0, x1
+    
+    def edge3(self):
+        """ Create an image of edge 3 """
+        y0 = self.cy
+        y1 = DisplaySize[0]
+        x0 = 0
+        x1 = DisplaySize[1]
+        return y0, y1, x0, x1
+    
+    def edge4(self):
+        """ Create an image of edge 4 """
+        y0 = 0
+        y1 = self.cy
+        x0 = 0
+        x1 = DisplaySize[1]
+        return y0, y1, x0, x1
+    
+    def get_image(self):
+        global right, up
+        self.cx = DisplaySize[1] // 2 + right
+        self.cy = DisplaySize[0] // 2 + up
+        img = np.zeros(DisplaySize, dtype='uint32')
+        start_y, end_y, start_x, end_x = self.edge_func()
+        # Fill the image area with white color (255, 255, 255)
+        img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
+        
+        return img
+    
+    
+    
+class pyramid:
+    def __init__(self, cx=DisplaySize[1]//2, cy=DisplaySize[0]//2):
+        """Create a knife image with a given center."""
+        # Create an empty array with the specified size
+        global right, up
+        self.cx = DisplaySize[1] // 2
+        self.cy = DisplaySize[0] // 2
+        self.edge_func = self.edge1
+        
+    def __call__(self):
+        """Call the pyramid object to get the image."""
+        return self.get_image()
+    
+    def edge1(self):
+        """ Create an image of edge 1 """
+        y0 = self.cy
+        y1 = DisplaySize[0]
+        x0 = self.cx
+        x1 = DisplaySize[1]
+        return y0, y1, x0, x1
+    
+    def edge2(self):
+        """ Create an image of edge 2 """
+        y0 = self.cy
+        y1 = DisplaySize[0]
+        x0 = 0
+        x1 = self.cx
+        return y0, y1, x0, x1
+    
+    def edge3(self):
+        """ Create an image of edge 3 """
+        y0 = 0
+        y1 = self.cy
+        x0 = 0
+        x1 = self.cx
+        return y0, y1, x0, x1
+    
+    def edge4(self):
+        """ Create an image of edge 4 """
+        y0 = 0
+        y1 = self.cy
+        x0 = self.cx
+        x1 = DisplaySize[1]
+        return y0, y1, x0, x1
+    
+    def get_image(self):
+        global right, up
+        self.cx = DisplaySize[1] // 2 + right
+        self.cy = DisplaySize[0] // 2 + up
+        img = np.zeros(DisplaySize, dtype='uint32')
+        start_y, end_y, start_x, end_x = self.edge_func()
+        # Fill the image area with white color (255, 255, 255)
+        img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
+        
+        return img
+
+
+
+class shapes:
+    """
+    A class to hold the shapes to display.
+    This is used to create a list of shapes that can be displayed.
+    """
+    def __init__(self):
+        self.k = knife()
+        self.p = pyramid()
+        self.shape = self.k
+
+
+    def change_to_knife(self):
+        print("Changing to knife edge shape.")
+        self.shape = self.k
+        
+    def change_to_pyramid(self):
+        print("Changing to pyramid shape.")
+        self.shape = self.p
+
+    # def __len__(self):
+    #     return len(self.shapes)
+    
+    def reset_shapes(self):
+        """
+        Resets the shapes to the initial state.
+        """
+        global right, up
+        right = 0
+        up = 0
+        return None
+    
+    
+    def change_to_edge_1(self):
+        print("Changing to edge 1.")
+        self.shape.edge_func = self.shape.edge1
+        
+    def change_to_edge_2(self):
+        print("Changing to edge 2.")
+        self.shape.edge_func = self.shape.edge2
+
+    def change_to_edge_3(self):
+        print("Changing to edge 3.")
+        self.shape.edge_func = self.shape.edge3
+        
+    def change_to_edge_4(self):
+        print("Changing to edge 4.")
+        self.shape.edge_func = self.shape.edge4
+
+
+
 
 
 def StreamFrameBuffer():
@@ -295,6 +461,24 @@ def Menu():
 
 
 
+def initialize_offsets():
+    init_offset = input("Enter the initial offset (x,y) in pixels (default is 0,0): ")
+    if init_offset:
+        try:
+            right, up = map(int, init_offset.split(','))
+            print(f"Initial offset set to x={right}, y={up}")
+        except ValueError:
+            print("Invalid input. Using default offset of x=0, y=0.")
+            right = 0
+            up = 0
+    else:
+        print("Using default offset of x=0, y=0.")
+        right = 0
+        up = 0
+        
+    return right, up
+        
+
 def main():
     global mode
     # Define the shapes to display
@@ -336,8 +520,8 @@ def main():
     loop = True
     global stop; stop = False
     global right, up
-    right = 0
-    up = 0
+    right, up = initialize_offsets()
+    
     global locked; locked = False
     global sq_size
     # Thread to run StreamFrameBuffer
