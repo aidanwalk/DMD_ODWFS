@@ -397,22 +397,31 @@ class shapes:
     
     def change_to_edge_1(self):
         print("Changing to edge 1.")
+        Cmd.UnlockMirrors()
         self.shape.edge_func = self.shape.edge1
+        time.sleep(0.1)
+        Cmd.LockMirrors()
         
     def change_to_edge_2(self):
         print("Changing to edge 2.")
+        Cmd.UnlockMirrors()
         self.shape.edge_func = self.shape.edge2
+        time.sleep(0.1)
+        Cmd.LockMirrors()
 
     def change_to_edge_3(self):
         print("Changing to edge 3.")
+        Cmd.UnlockMirrors()
         self.shape.edge_func = self.shape.edge3
-        
+        time.sleep(0.1)
+        Cmd.LockMirrors()
+
     def change_to_edge_4(self):
         print("Changing to edge 4.")
+        Cmd.UnlockMirrors()
         self.shape.edge_func = self.shape.edge4
-
-
-
+        time.sleep(0.1)
+        Cmd.LockMirrors()
 
 def StreamFrameBuffer():
     global buf, DisplaySize, shape_maker
