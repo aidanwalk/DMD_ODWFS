@@ -174,6 +174,16 @@ class Cmd():
         right -= step
         print(f"Offset: x={right}, y={up}")
         return None
+    
+    @staticmethod
+    def PrintOffset():
+        """
+        Prints the current offset of the shape.
+        This is useful for debugging and understanding the current position of the shape.
+        """
+        global right, up
+        print(f"Current offset: x={right}, y={up}")
+        return None
 
     @staticmethod
     def Cycle_Step():    
@@ -218,7 +228,7 @@ class Cmd():
         Calls the function associated with the name.
         """
         global locked, mode
-        chars_to_check = 'uqrm'
+        chars_to_check = 'uqrmo'
         # If we are not unlocking the mirrors or quitting,
         # check if the mirrors are locked. 
         # If they are locked, we cannot change the display.
@@ -554,6 +564,7 @@ def main():
         '2'     : shape_maker.change_to_edge_2,
         '3'     : shape_maker.change_to_edge_3,
         '4'     : shape_maker.change_to_edge_4,
+        'o'     : Cmd.PrintOffset,
     }
 
     
