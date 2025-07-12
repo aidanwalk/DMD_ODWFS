@@ -1,74 +1,7 @@
-"""
-This script is used to display a sequential knife edge or sequential pyramid
-test pattern on to the DMD. 
-
-It is designed to be run on a Raspberry Pi with a DLPDLCR230NPEVM
-connected to it. It uses the framebuffer to display the patterns on the DMD.
-It allows you to move the shape around the screen, change the step size, 
-change the shape, and lock/unlock the mirrors.
-
-
-[k] Knife Edge Test (default)
-    ---------------
-    Commands a knife edge pattern in the following order:
-    1. +X    |  ##|
-             |  ##|
-        
-    2. -X    |##  |
-             |##  |
-             
-    3. +Y    |####|
-             |    |
-             
-    4. -Y    |    |
-             |####|
-             
-    *where # indicates a mirror in the ON state. 
-
-
-[p] Pyramid Test
-    ------------
-    Commands a pyramid pattern in the following order:
-    1. +X,+Y    |  #|
-                |   |
-        
-    2. -X,+Y    |#  |
-                |   |
-             
-    3. -X,-Y    |   |
-                |#  |
-             
-    4. +X,-Y    |   |
-                |  #|
-                
-    *where # indicates a mirror in the ON state. 
-    
-
-
-Use:
-----
-1. Ensure the DLPDLCR230NPEVM is connected to the Raspberry Pi.
-2. DLPDLCR230NPEVM is powered on and ready.
-3. Run the script:
-   $ python sequential.py
-4. Find the center of the PSF on the DMD. 
-   If you know the center coordinates apriori, enter them when prompted at the
-   start of the script. Otherwise, use the arrow keys to move the shape
-   around the screen until you find the center of the PSF.
-5. Use the ' ' keys to cycle through the knife edges
-
-
-
-
-Streaming to the Raspberry Pi Frame Buffer from Quasimondo 2025-06-19
-https://gist.github.com/Quasimondo/e47a5be0c2fa9a3ef80c433e3ee2aead
-
-@author: Aidan Walk, walka@hawaii.edu
-
-"""
 
 import time
 import numpy as np
+from scipy.ndimage import zoom
 import os
 import threading
 
@@ -83,18 +16,6 @@ from linuxi2c import *
 import i2c
 
 from sshkeyboard import listen_keyboard, stop_listening
-
-# ===============================================================================
-# GLOBAL VARIABLES -- CHANGE ME
-# ===============================================================================
-# Set the display size to match your framebuffer resolution
-# This must match resolution listed from:
-#     $ fbset -fb /dev/fb0
-# "geometry"
-global DisplaySize; DisplaySize = (1080, 1920)
-# Initial step size for moving the shape
-global step; step=100
-# ===============================================================================
 
 
 class Set(Enum):
@@ -186,6 +107,37 @@ class Cmd():
         return None
 
     @staticmethod
+    def Cycle_Width():    
+        """
+        Cycles through the step sizes: 1, 10, 100.
+        This allows the user to change the step size for moving the shape.
+        """
+        global ramp_width
+
+        def change_width_1():
+            ramp_width = 1
+            print(f'Width changed to {ramp_width}')
+            return ramp_width
+
+        def change_width_4():
+            ramp_width = 4
+            print(f'Width changed to {ramp_width}')
+            return ramp_width
+
+        def change_width_8():
+            ramp_width = 8
+            print(f'Width changed to {ramp_width}')
+            return ramp_width
+
+
+        if ramp_width == 1: ramp_width = change_width_4()
+        elif ramp_width == 4: ramp_width = change_width_8()
+        else: ramp_width = change_width_1()
+        
+        return None
+    
+    
+    @staticmethod
     def Cycle_Step():    
         """
         Cycles through the step sizes: 1, 10, 100.
@@ -247,186 +199,201 @@ class Cmd():
 
 
 
-class knife:
-    def __init__(self, cx=DisplaySize[1]//2, cy=DisplaySize[0]//2):
-        """Create a knife image with a given center."""
-        # Create an empty array with the specified size
-        self.cx = DisplaySize[1] // 2
-        self.cy = DisplaySize[0] // 2
-        self.edge_func = self.edge1
-        
-    def __call__(self):
-        """ Call the knife object to get the image."""
-        return self.get_image()
-    
-    def edge1(self):
-        """ Create an image of edge 1 """
-        y0 = 0
-        y1 = DisplaySize[0]
-        x0 = self.cx
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def edge2(self):
-        """ Create an image of edge 2 """
-        y0 = 0
-        y1 = DisplaySize[0]
-        x0 = 0
-        x1 = self.cx
-        return y0, y1, x0, x1
-    
-    def edge3(self):
-        """ Create an image of edge 3 """
-        y0 = self.cy
-        y1 = DisplaySize[0]
-        x0 = 0
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def edge4(self):
-        """ Create an image of edge 4 """
-        y0 = 0
-        y1 = self.cy
-        x0 = 0
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def get_image(self):
-        global right, up
-        self.cx = DisplaySize[1] // 2 + right
-        self.cy = DisplaySize[0] // 2 + up
-        img = np.zeros(DisplaySize, dtype='uint32')
-        start_y, end_y, start_x, end_x = self.edge_func()
-        # Fill the image area with white color (255, 255, 255)
-        img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
-        
-        return img
-    
-    
-    
-class pyramid:
-    def __init__(self, cx=DisplaySize[1]//2, cy=DisplaySize[0]//2):
-        """Create a knife image with a given center."""
-        # Create an empty array with the specified size
-        global right, up
-        self.cx = DisplaySize[1] // 2
-        self.cy = DisplaySize[0] // 2
-        self.edge_func = self.edge1
-        
-    def __call__(self):
-        """Call the pyramid object to get the image."""
-        return self.get_image()
-    
-    def edge1(self):
-        """ Create an image of edge 1 """
-        y0 = self.cy
-        y1 = DisplaySize[0]
-        x0 = self.cx
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def edge2(self):
-        """ Create an image of edge 2 """
-        y0 = self.cy
-        y1 = DisplaySize[0]
-        x0 = 0
-        x1 = self.cx
-        return y0, y1, x0, x1
-    
-    def edge3(self):
-        """ Create an image of edge 3 """
-        y0 = 0
-        y1 = self.cy
-        x0 = 0
-        x1 = self.cx
-        return y0, y1, x0, x1
-    
-    def edge4(self):
-        """ Create an image of edge 4 """
-        y0 = 0
-        y1 = self.cy
-        x0 = self.cx
-        x1 = DisplaySize[1]
-        return y0, y1, x0, x1
-    
-    def get_image(self):
-        global right, up
-        self.cx = DisplaySize[1] // 2 + right
-        self.cy = DisplaySize[0] // 2 + up
-        img = np.zeros(DisplaySize, dtype='uint32')
-        start_y, end_y, start_x, end_x = self.edge_func()
-        # Fill the image area with white color (255, 255, 255)
-        img[start_y:end_y, start_x:end_x] = 0xffffffff #2**32-1
-        
-        return img
-
-
-
-class shapes:
+class Ramp:
     """
-    A class to hold the shapes to display.
-    This is used to create a list of shapes that can be displayed.
-    """
-    def __init__(self):
-        self.k = knife()
-        self.p = pyramid()
-        self.shape = self.k
-
-
-    def change_to_knife(self):
-        print("Changing to knife edge shape.")
-        self.shape = self.k
-        
-    def change_to_pyramid(self):
-        print("Changing to pyramid shape.")
-        self.shape = self.p
-
-    # def __len__(self):
-    #     return len(self.shapes)
+    A class to generate ramp knife edges on the DMD. 
     
-    def reset_shapes(self):
+    parameters:
+    -----------
+    dmd_size: tuple
+        The number of DMD mirrors in (height, width).
+    image_size: tuple
+        The size of the image to be projected in (height, width).
+        (i.e. the frame size expected by the Raspberry Pi framebuffer)
+    bit_depth: int
+        The bit depth of the Raspberry Pi framebuffer.
+        (i.e. 2**(bit_depth) - 1 is the maximum value of a pixel == white)
+    """
+    def __init__(self, 
+                 dmd_size=(540,960),
+                 image_size=(1080, 1920), 
+                 bit_depth=32):
+        
+        self.dmd_size = dmd_size
+        self.image_size = image_size
+        self.bit_depth = bit_depth
+        
+        self.edge = 0
+        self.edge_generator = [self.Edge_1, 
+                               self.Edge_2, 
+                               self.Edge_3, 
+                               self.Edge_4
+                               ]
+        
+        
+    def __call__(self, *args, **kwargs):
+        return self.generate_ramp(*args, **kwargs)
+
+
+    def change_edge(self, edge_id):
         """
-        Resets the shapes to the initial state.
+        Change the edge generator function.
+        
+        parameters
+        ----------
+        edge_id: int
+            The edge id to use (1, 2, 3, or 4).
         """
-        global right, up
-        right = 0
-        up = 0
-        return None
+        if edge_id in [1, 2, 3, 4]:
+            self.edge = edge_id - 1
+            return
+        else:
+            raise ValueError("Invalid edge id. Please use 1, 2, 3, or 4.")
+        
+
+    def Edge_1(self, cx, cy, width=10):
+        """
+        Generates ramp edge 1 of the knife edge (right edge):
+            |  #|
+            |  #|
+            
+        parameters
+        ----------
+        cx: int
+            The center x position of the ramp in DMD mirrors.
+        width: int
+            The width of the ramp in DMD mirrors.
+            
+        returns
+        -------
+        ramp: np.ndarray
+            The generated ramp pattern as a 2D numpy array (shape = self.dmd_size).
+        """
+        ramp = np.zeros(self.dmd_size, dtype=f'uint{self.bit_depth}')
+        
+        # Calculate the start and end positions of the ramp
+        start_x = max(cx - width // 2, 0)
+        end_x = min(cx + width // 2, self.dmd_size[1])
+        
+        # Generate the ramp values
+        ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_x - start_x, dtype=f'uint{self.bit_depth}')
+        
+        # Assign the ramp values to the appropriate row in the ramp array
+        ramp[:, start_x:end_x] = ramp_values
+        # Set values to the right of the ramp to white
+        ramp[:, end_x:] = 2**self.bit_depth - 1
+        return ramp
+    
+    
+    def Edge_2(self, cx, cy, width=10):
+        """
+        Generates ramp edge 2 of the knife edge (left edge):
+            |#  |
+            |#  |
+            
+        parameters
+        ----------
+        cx: int
+            The center x position of the ramp in DMD mirrors.
+        width: int
+            The width of the ramp in DMD mirrors.
+            
+        returns
+        -------
+        ramp: np.ndarray
+            The generated ramp pattern as a 2D numpy array (shape = self.dmd_size).
+        """
+        # Just invert edge 1
+        return 2**self.bit_depth - 1 - self.Edge_1(cx, cy, width)
+    
+    
+    def Edge_3(self, cx, cy, width=10):
+        """
+        Generates ramp edge 3 of the knife edge (top edge):
+            |####|
+            |    | 
+        
+        """
+        ramp = np.zeros(self.dmd_size, dtype=f'uint{self.bit_depth}')
+        
+        # Calculate the start and end positions of the ramp
+        start_y = max(cy - width // 2, 0)
+        end_y = min(cy + width // 2, self.dmd_size[0])
+        
+        # Generate the ramp values
+        ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_y - start_y, dtype=f'uint{self.bit_depth}')
+        
+        # Assign the ramp values to the appropriate column in the ramp array
+        ramp[start_y:end_y, :] = ramp_values[:, np.newaxis]
+        # Set values above the ramp to white
+        ramp[end_y:, :] = 2**self.bit_depth - 1
+        return ramp
+    
+    
+    def Edge_4(self, cx, cy, width=10):
+        """
+        Generates ramp edge 4 of the knife edge (bottom edge):
+            |    |
+            |####|
+        
+        """
+        # Just invert edge 3
+        return 2**self.bit_depth - 1 - self.Edge_3(cx, cy, width)
+    
+    
+    def generate_ramp(self, width=10, right=0, up=0):
+        """
+        Generate a ramp pattern from 0 to 2**(bit_depth) - 1.
+        With offsets right and up to shift the ramp.
+        
+        parameters
+        ----------
+        width: int
+            The width of the ramp in DMD mirrors.
+        right: int
+            The number of DMD mirrors to shift the ramp to the right.
+        up: int
+            The number of DMD mirrors to shift the ramp up.
+            
+        returns
+        -------
+        ramp: np.ndarray
+            The generated ramp pattern as a 2D numpy array (shape = self.image_size).
+        """
+        
+        ramp = self.edge_generator[self.edge](
+            cx=self.dmd_size[1]//2 + right, 
+            cy=self.dmd_size[0]//2 + up,
+            width=width
+        )
+        # Scale the ramp to the image size
+        ramp = zoom(ramp, (self.image_size[0] / self.dmd_size[0], self.image_size[1] / self.dmd_size[1]), order=0, prefilter=False)
+        return ramp
     
     
     def change_to_edge_1(self):
-        print("Changing to edge 1.")
-        Cmd.UnlockMirrors()
-        self.shape.edge_func = self.shape.edge1
-        time.sleep(0.1)
-        Cmd.LockMirrors()
+        self.change_edge(1)
         
     def change_to_edge_2(self):
-        print("Changing to edge 2.")
-        Cmd.UnlockMirrors()
-        self.shape.edge_func = self.shape.edge2
-        time.sleep(0.1)
-        Cmd.LockMirrors()
-
+        self.change_edge(2)
+        
     def change_to_edge_3(self):
-        print("Changing to edge 3.")
-        Cmd.UnlockMirrors()
-        self.shape.edge_func = self.shape.edge3
-        time.sleep(0.1)
-        Cmd.LockMirrors()
-
+        self.change_edge(3)
+        
     def change_to_edge_4(self):
-        print("Changing to edge 4.")
-        Cmd.UnlockMirrors()
-        self.shape.edge_func = self.shape.edge4
-        time.sleep(0.1)
-        Cmd.LockMirrors()
+        self.change_edge(4)
+
+
+
+
+
+
 
 def StreamFrameBuffer():
-    global buf, DisplaySize, shape_maker
+    global buf, ramp, ramp_width, up, right
     while True:
         # create a 32 bit image
-        image = shape_maker.shape()
+        image = ramp(width=ramp_width, right=right, up=up)
         # image = square()
         # push to screen
         buf[:] = image
@@ -504,8 +471,8 @@ def Menu():
 ----------------------------------
                MENU                
 ----------------------------------
- p      Sequential Pyramid Mode
- k      Sequential Knife Edge Mode
+ w      Cycle Ramp Width
+        (cycles through 1, 4, 8)
  1      Edge 1
  2      Edge 2
  3      Edge 3
@@ -549,8 +516,8 @@ def initialize_offsets():
 def main():
     global mode
     # Define the shapes to display
-    global shape_maker
-    shape_maker = shapes()
+    global ramp
+    ramp = Ramp()
     # Available modes for the DLPDLCR230NPEVM
     # Each mode corresponds to a function that changes the display.
     # The keys are the characters that the user can input to select the mode.
@@ -566,12 +533,11 @@ def main():
         'q'     : Cmd.Quit,
         'm'     : Menu,
         's'     : Cmd.Cycle_Step,
-        'k'     : shape_maker.change_to_knife,
-        'p'     : shape_maker.change_to_pyramid,
-        '1'     : shape_maker.change_to_edge_1,
-        '2'     : shape_maker.change_to_edge_2,
-        '3'     : shape_maker.change_to_edge_3,
-        '4'     : shape_maker.change_to_edge_4,
+        'w'     : Cmd.Cycle_Width,
+        '1'     : ramp.change_to_edge_1,
+        '2'     : ramp.change_to_edge_2,
+        '3'     : ramp.change_to_edge_3,
+        '4'     : ramp.change_to_edge_4,
         'o'     : Cmd.PrintOffset,
     }
 
@@ -598,8 +564,11 @@ def main():
     
     loop = True
     global stop; stop = False
+    
     global right, up
     right, up = initialize_offsets()
+    global ramp_width; ramp_width = 1
+    
     global locked; locked = False
     global sq_size
     # Thread to run StreamFrameBuffer
@@ -635,3 +604,51 @@ def main():
 
 
 if __name__ == "__main__": main()
+
+
+
+
+
+
+
+
+
+"""
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    
+    width = 5
+    ramp = Ramp()
+    pattern = ramp(width=width, right=0, up=0)
+    
+    
+    plt.figure(figsize=(10,7), tight_layout=True)
+    plt.title("Ramp Pattern")
+    plt.ion()
+    
+    pim = plt.imshow(pattern, cmap='gray', vmin=0, vmax=2**ramp.bit_depth - 1)
+    plt.colorbar()
+    plt.show()
+    
+    while True:
+        cmd = input("Enter Edge (1-4) or Q to quit: ")
+        if cmd.lower() == 'q':
+            break
+        try:
+            edge_id = int(cmd)
+            ramp.change_edge(edge_id)
+            pattern = ramp(width=width, right=0, up=0)
+            pim.set_data(pattern)
+            plt.draw()
+            plt.pause(0.01)
+        except ValueError as e:
+            print(e)
+            continue
+    
+    plt.ioff()
+    plt.close()
+
+        
+        
+"""
