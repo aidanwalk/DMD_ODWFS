@@ -203,6 +203,9 @@ class Ramp:
     """
     A class to generate ramp knife edges on the DMD. 
     
+    ** WARNING ** 
+    This class fails to generate odd-valued ramp widths. 
+    
     parameters:
     -----------
     dmd_size: tuple
@@ -272,8 +275,20 @@ class Ramp:
         ramp = np.zeros(self.dmd_size, dtype=f'uint{self.bit_depth}')
         
         # Calculate the start and end positions of the ramp
-        start_x = max(cx - width // 2, 0)
-        end_x = min(cx + width // 2, self.dmd_size[1])
+        start_x = cx - width // 2
+        end_x   = cx + width // 2
+        
+        if width % 2 == 1:
+            # If width is odd, adjust the end position to include the center mirror
+            end_x += 1
+            print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
+        
+        
+        start_x = max(start_x, 0)
+        end_x = min(end_x, self.dmd_size[1])
+        if start_x < 0 or end_x > self.dmd_size[1]:
+            raise ValueError("Ramp width exceeds DMD size. Please adjust the width or center position.")
+        
         
         # Generate the ramp values
         ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_x - start_x, dtype=f'uint{self.bit_depth}')
@@ -317,8 +332,19 @@ class Ramp:
         ramp = np.zeros(self.dmd_size, dtype=f'uint{self.bit_depth}')
         
         # Calculate the start and end positions of the ramp
-        start_y = max(cy - width // 2, 0)
-        end_y = min(cy + width // 2, self.dmd_size[0])
+        start_y = cy - width // 2
+        end_y   = cy + width // 2
+        
+        if width % 2 == 1:
+            # If width is odd, adjust the end position to include the center mirror
+            end_y += 1
+            print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
+        
+        
+        start_y = max(start_y, 0)
+        end_y = min(end_y, self.dmd_size[0])
+        if start_y < 0 or end_y > self.dmd_size[0]:
+            raise ValueError("Ramp width exceeds DMD size. Please adjust the width or center position.")
         
         # Generate the ramp values
         ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_y - start_y, dtype=f'uint{self.bit_depth}')
@@ -611,44 +637,51 @@ if __name__ == "__main__": main()
 
 
 
+# # ===========================================================================
+# # Uncomment the following lines to run the script as a standalone program
+# # This will allow you to visualize the ramp pattern using matplotlib.
+# # ===========================================================================
 
-
-"""
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
+# if __name__ == "__main__":
+#     import matplotlib.pyplot as plt
     
-    width = 5
-    ramp = Ramp()
-    pattern = ramp(width=width, right=0, up=0)
+#     width = 5
+#     edge_id = 1
+#     ramp = Ramp()
+#     pattern = ramp(width=width, right=0, up=0)
     
     
-    plt.figure(figsize=(10,7), tight_layout=True)
-    plt.title("Ramp Pattern")
-    plt.ion()
+#     plt.figure(figsize=(10,7), tight_layout=True)
+#     plt.title("Ramp Pattern")
+#     plt.ion()
     
-    pim = plt.imshow(pattern, cmap='gray', vmin=0, vmax=2**ramp.bit_depth - 1)
-    plt.colorbar()
-    plt.show()
+#     pim = plt.imshow(pattern, cmap='gray', vmin=0, vmax=2**ramp.bit_depth - 1)
+#     plt.colorbar()
+#     plt.show()
     
-    while True:
-        cmd = input("Enter Edge (1-4) or Q to quit: ")
-        if cmd.lower() == 'q':
-            break
-        try:
-            edge_id = int(cmd)
-            ramp.change_edge(edge_id)
-            pattern = ramp(width=width, right=0, up=0)
-            pim.set_data(pattern)
-            plt.draw()
-            plt.pause(0.01)
-        except ValueError as e:
-            print(e)
-            continue
+#     while True:
+#         cmd = input("Enter Edge (1-4), ramp width (w), or Q to quit: ")
+#         if cmd.lower() == 'q':
+#             break
+#         elif cmd.lower() == 'w':
+#             width = int(input("Enter new ramp width: "))
+#             print(f"Ramp width set to {width}")
+#         elif cmd.isnumeric():
+#             edge_id = int(cmd)
+            
+#         try:
+#             # edge_id = int(cmd)
+#             ramp.change_edge(edge_id)
+#             pattern = ramp(width=width, right=0, up=0)
+#             pim.set_data(pattern)
+#             plt.draw()
+#             plt.pause(0.01)
+#         except ValueError as e:
+#             print(e)
+#             continue
     
-    plt.ioff()
-    plt.close()
+#     plt.ioff()
+#     plt.close()
 
         
         
-"""
