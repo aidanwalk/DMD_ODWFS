@@ -18,6 +18,11 @@ import i2c
 from sshkeyboard import listen_keyboard, stop_listening
 
 
+global DisplaySize
+DisplaySize = (1080, 1920)  # (height, width) in
+# Initial step size for moving the shape
+global step; step=100
+
 class Set(Enum):
     Disabled = 0
     Enabled = 1
@@ -254,6 +259,23 @@ class Ramp:
             raise ValueError("Invalid edge id. Please use 1, 2, 3, or 4.")
         
 
+    @staticmethod
+    def generate_greyscale_hex_colors(n):
+        # Grayscale values from 0 to 255
+        gray_vals = np.linspace(0, 255, n, dtype=np.uint8)
+        
+        hex_colors = []
+        for g in gray_vals:
+            # Convert to 32-bit ARGB: full alpha (0xFF), and equal RGB
+            color = (0xFF << 24) | (g << 16) | (g << 8) | g
+            hex_colors.append(f'0x{color:08X}')
+
+        # Convert hex values to uint 32
+        uint_32_colors = np.array([int(color, 16) for color in hex_colors])
+
+        return uint_32_colors
+
+
     def Edge_1(self, cx, cy, width=10):
         """
         Generates ramp edge 1 of the knife edge (right edge):
@@ -291,7 +313,8 @@ class Ramp:
         
         
         # Generate the ramp values
-        ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_x - start_x, dtype=f'uint{self.bit_depth}')
+        # ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_x - start_x, dtype=f'uint{self.bit_depth}')
+        ramp_values = self.generate_greyscale_hex_colors(end_x - start_x)
         
         # Assign the ramp values to the appropriate row in the ramp array
         ramp[:, start_x:end_x] = ramp_values
@@ -347,8 +370,9 @@ class Ramp:
             raise ValueError("Ramp width exceeds DMD size. Please adjust the width or center position.")
         
         # Generate the ramp values
-        ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_y - start_y, dtype=f'uint{self.bit_depth}')
-        
+        # ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_y - start_y, dtype=f'uint{self.bit_depth}')
+        ramp_values = self.generate_greyscale_hex_colors(end_y - start_y)
+
         # Assign the ramp values to the appropriate column in the ramp array
         ramp[start_y:end_y, :] = ramp_values[:, np.newaxis]
         # Set values above the ramp to white
