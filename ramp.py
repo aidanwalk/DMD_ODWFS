@@ -261,17 +261,20 @@ class Ramp:
 
     @staticmethod
     def generate_greyscale_hex_colors(n):
-        # Grayscale values from 0 to 255
+        # Generate grayscale values from 0 to 255 (8-bit range for RGB components)
         gray_vals = np.linspace(0, 255, n, dtype=np.uint8)
         
-        hex_colors = []
-        for g in gray_vals:
-            # Convert to 32-bit ARGB: full alpha (0xFF), and equal RGB
-            color = (0xFF << 24) | (g << 16) | (g << 8) | g
-            hex_colors.append(f'0x{color:08X}')
-
-        # Convert hex values to uint 32
-        uint_32_colors = np.array([int(color, 16) for color in hex_colors])
+        # Create uint32 colors directly
+        uint_32_colors = np.zeros(n, dtype=np.uint32)
+        
+        for i, g in enumerate(gray_vals):
+            # Convert to 32-bit ARGB: full alpha (0xFF), and equal RGB components
+            # Each component is 8-bit, so g should be 0-255
+            alpha = np.uint32(0xFF) << 24  # Full alpha
+            red = np.uint32(g) << 16       # Red component
+            green = np.uint32(g) << 8      # Green component  
+            blue = np.uint32(g)            # Blue component
+            uint_32_colors[i] = alpha | red | green | blue
 
         return uint_32_colors
 
@@ -315,6 +318,7 @@ class Ramp:
         # Generate the ramp values
         # ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_x - start_x, dtype=f'uint{self.bit_depth}')
         ramp_values = self.generate_greyscale_hex_colors(end_x - start_x)
+        print(f"Ramp values: {ramp_values}")
         
         # Assign the ramp values to the appropriate row in the ramp array
         ramp[:, start_x:end_x] = ramp_values
@@ -666,6 +670,21 @@ if __name__ == "__main__": main()
 # # This will allow you to visualize the ramp pattern using matplotlib.
 # # ===========================================================================
 
+
+
+# def argb_to_rgb_array(argb_values):
+#     # Function is used to convert ARGB values to RGB array
+#     # (Rpi pixel format is hex ARGB. Matplotlib expects RGB)
+#     # Extract RGB components from ARGB
+#     red = (argb_values >> 16) & 0xFF
+#     green = (argb_values >> 8) & 0xFF
+#     blue = argb_values & 0xFF
+    
+#     # Stack into RGB array and normalize to 0-1 range
+#     rgb_array = np.stack([red, green, blue], axis=-1) / 255.0
+#     return rgb_array
+
+
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
     
@@ -697,7 +716,8 @@ if __name__ == "__main__": main()
 #             # edge_id = int(cmd)
 #             ramp.change_edge(edge_id)
 #             pattern = ramp(width=width, right=0, up=0)
-#             pim.set_data(pattern)
+#             image = argb_to_rgb_array(pattern)
+#             pim.set_data(image)
 #             plt.draw()
 #             plt.pause(0.01)
 #         except ValueError as e:
