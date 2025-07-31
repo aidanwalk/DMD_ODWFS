@@ -251,6 +251,7 @@ class Ramp:
         """
         if edge_id in [1, 2, 3, 4]:
             self.edge = edge_id - 1
+            print(f"Edge changed to {edge_id}")
             return
         else:
             raise ValueError("Invalid edge id. Please use 1, 2, 3, or 4.")
