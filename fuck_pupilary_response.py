@@ -39,7 +39,7 @@ global ramp; ramp = Ramp()
 # Offeset of the ramp pattern from the center of the DMD
 global right, up; right, up = 0, 0
 # Width of the ramp (i.e. 2*modulation radius)
-global ramp_width; ramp_width = 1
+global ramp_width; ramp_width = 960//2
 # Mirror lock status
 global locked; locked = False
 # Initial step size for moving the shape

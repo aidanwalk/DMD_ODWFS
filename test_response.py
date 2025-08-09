@@ -53,6 +53,7 @@ class Intensity_Screen:
         self.dmd_size = dmd_size
         self.image_size = image_size
         self.bit_depth = bit_depth
+        self.intensity = 0
         
         
     def __call__(self, *args, **kwargs):
@@ -78,8 +79,8 @@ class Intensity_Screen:
             The generated screen pattern as a 2D numpy array (shape = self.image_size).
         """
         
-        screen = np.zeros(self.dmd_size, dtype=f'uint{self.bit_depth}')
-        screen[:] = display.intensity2hex(intensity)
+        screen = np.ones(self.dmd_size, dtype=f'uint{self.bit_depth}')
+        screen *= display.intensity2hex(intensity, reverse_perception=False)
         # Scale the screen to the image size
         screen = zoom(screen, (self.image_size[0] / self.dmd_size[0], self.image_size[1] / self.dmd_size[1]), order=0, prefilter=False)
         return screen
@@ -169,6 +170,7 @@ def main():
     global mode
     # Define the shapes to display
     global screen
+    global intensity; intensity=0
     screen = Intensity_Screen()
     
     # Enable screen parallel mode
@@ -218,10 +220,6 @@ def main():
         else:
             try:
                 intensity = int(ans)
-                if 0 <= intensity <= 255:
-                    image = screen(intensity)
-                else:
-                    print("Invalid intensity. Please enter a value between 0 and 255.")
             except ValueError:
                 print("Invalid input. Please enter a number between 0 and 255.")
 

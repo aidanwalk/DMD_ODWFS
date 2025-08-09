@@ -112,7 +112,7 @@ class Ramp:
         if width % 2 == 1:
             # If width is odd, adjust the end position to include the center mirror
             end_x += 1
-            print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
+            # print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
         
         
         start_x = max(start_x, 0)
@@ -124,7 +124,7 @@ class Ramp:
         # Generate the ramp values
         # ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_x - start_x, dtype=f'uint{self.bit_depth}')
         ramp_values = self.generate_greyscale_hex_colors(end_x - start_x)
-        print(f"Ramp values: {ramp_values}")
+        # print(f"Ramp values: {ramp_values}")
         
         # Assign the ramp values to the appropriate row in the ramp array
         ramp[:, start_x:end_x] = ramp_values
@@ -152,8 +152,34 @@ class Ramp:
         ramp: np.ndarray
             The generated ramp pattern as a 2D numpy array (shape = self.dmd_size).
         """
-        # Just invert edge 1
-        return 2**self.bit_depth - 1 - self.Edge_1(cx, cy, width)
+        ramp = np.zeros(self.dmd_size, dtype=f'uint{self.bit_depth}')
+        
+        # Calculate the start and end positions of the ramp
+        start_x = cx - width // 2
+        end_x   = cx + width // 2
+        
+        if width % 2 == 1:
+            # If width is odd, adjust the end position to include the center mirror
+            end_x += 1
+            # print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
+        
+        
+        start_x = max(start_x, 0)
+        end_x = min(end_x, self.dmd_size[1])
+        if start_x < 0 or end_x > self.dmd_size[1]:
+            raise ValueError("Ramp width exceeds DMD size. Please adjust the width or center position.")
+        
+        
+        # Generate the ramp values
+        # ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_x - start_x, dtype=f'uint{self.bit_depth}')
+        ramp_values = self.generate_greyscale_hex_colors(end_x - start_x)
+        # print(f"Ramp values: {ramp_values}")
+        
+        # Assign the ramp values to the appropriate row in the ramp array
+        ramp[:, start_x:end_x] = ramp_values[::-1]  # Reverse the order for left edge
+        # Set values to the right of the ramp to white
+        ramp[:, :start_x] = 2**self.bit_depth - 1
+        return ramp
     
     
     def Edge_3(self, cx, cy, width=10):
@@ -172,7 +198,7 @@ class Ramp:
         if width % 2 == 1:
             # If width is odd, adjust the end position to include the center mirror
             end_y += 1
-            print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
+            # print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
         
         
         start_y = max(start_y, 0)
@@ -199,8 +225,32 @@ class Ramp:
             |####|
         
         """
-        # Just invert edge 3
-        return 2**self.bit_depth - 1 - self.Edge_3(cx, cy, width)
+        ramp = np.zeros(self.dmd_size, dtype=f'uint{self.bit_depth}')
+        
+        # Calculate the start and end positions of the ramp
+        start_y = cy - width // 2
+        end_y   = cy + width // 2
+        
+        if width % 2 == 1:
+            # If width is odd, adjust the end position to include the center mirror
+            end_y += 1
+            # print("** WARNING ** Odd ramp width injects a tilt aberration. (The ramp cannot be centered between pixels)")
+        
+        
+        start_y = max(start_y, 0)
+        end_y = min(end_y, self.dmd_size[0])
+        if start_y < 0 or end_y > self.dmd_size[0]:
+            raise ValueError("Ramp width exceeds DMD size. Please adjust the width or center position.")
+        
+        # Generate the ramp values
+        # ramp_values = np.linspace(0, 2**self.bit_depth - 1, end_y - start_y, dtype=f'uint{self.bit_depth}')
+        ramp_values = self.generate_greyscale_hex_colors(end_y - start_y)
+
+        # Assign the ramp values to the appropriate column in the ramp array
+        ramp[start_y:end_y, :] = ramp_values[::-1, np.newaxis]
+        # Set values above the ramp to white
+        ramp[:start_y, :] = 2**self.bit_depth - 1
+        return ramp
     
     
 

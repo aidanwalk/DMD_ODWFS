@@ -8,6 +8,12 @@ from linuxi2c import *
 import i2c
 
 
+class Set(Enum):
+    Disabled = 0
+    Enabled = 1
+    
+
+
 def make_parallel_mode():
     '''
     Initializes the Raspberry Pi's GPIO lines to communicate with the DLPDLCR230NPEVM,
