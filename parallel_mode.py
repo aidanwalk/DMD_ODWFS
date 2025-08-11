@@ -22,7 +22,7 @@ def make_parallel_mode():
 
     gpio_init_enable = True          # Set to FALSE to disable default initialization of Raspberry Pi GPIO pinouts. TRUE by default.
     i2c_time_delay_enable = False    # Set to FALSE to prevent I2C commands from waiting. May lead to I2C bus hangups with some commands if FALSE.
-    i2c_time_delay = 0.8             # Lowering this value will speed up I2C commands. Too small delay may lead to I2C bus hangups with some commands.
+    i2c_time_delay = 1             # Lowering this value will speed up I2C commands. Too small delay may lead to I2C bus hangups with some commands.
     protocoldata = ProtocolData()
 
     def WriteCommand(writebytes, protocoldata):
@@ -72,7 +72,7 @@ def make_parallel_mode():
     Summary = WriteParallelVideoControl(ClockSample.FallingEdge,  Polarity.ActiveHigh,  Polarity.ActiveLow,  Polarity.ActiveLow)
     Summary = WriteColorCoordinateAdjustmentControl(0)
     Summary, BitRate, PixelMapMode = ReadFpdLinkConfiguration()
-    Summary = WriteDelay(50)
+    Summary = WriteDelay(100)
     time.sleep(1)
     Summary = WriteDisplayImageCurtain(0,Color.Black)
     
