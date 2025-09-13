@@ -1,4 +1,83 @@
+"""
+This script enables you to program a sequentail knife edge test on the DMD 
+with linear amplitude filters of varying slope. Different sloped amilitude
+filters directly determine the WFS dynamic range and sensitivity, analogous 
+to the modulation amplitude in a Pyramid Wavefront Sensor.
 
+The programmed linear amplitude filter is taking into account the fact that
+the DMD projector automatically converts input intensities to the human 
+visual response function. This script applies the inverse gamma function, so
+that, for example, a greyscale value of 0.5 results in a micromirror duty 
+cycle of truly 50%.
+
+
+It is designed to be run on a Raspberry Pi with a DLPDLCR230NPEVM
+connected to it. It uses the framebuffer to display the patterns on the DMD.
+It allows you to move the shape around the screen, change the step size, 
+change the slope of the amplitude filter, and lock/unlock the mirrors.
+
+Possible commands: 
+----------------------------------
+               MENU                
+----------------------------------
+ w      Cycle Ramp Width
+        (cycles through 2, 4, 8)
+ 1      Edge 1
+ 2      Edge 2
+ 3      Edge 3
+ 4      Edge 4
+ s      Change step size 
+        (cycles through 1, 10, 100)
+ right  Move Right
+ left   Move Left             
+ up     Move Up
+ down   Move Down
+ l      Lock Mirrors
+ r      Retry Lock
+ u      Unlock Mirrors
+ m      Display Menu
+ q      Quit                        
+----------------------------------
+
+
+Knife Edge Test
+---------------
+    Commands a knife edge pattern in the following order:
+    1. +X    |  ##|
+             |  ##|
+        
+    2. -X    |##  |
+             |##  |
+             
+    3. +Y    |####|
+             |    |
+             
+    4. -Y    |    |
+             |####|
+             
+    *where # indicates a mirror in the ON state. 
+
+Use:
+----
+1. Ensure the DLPDLCR230NPEVM is connected to the Raspberry Pi.
+2. DLPDLCR230NPEVM is powered on and ready.
+3. Run the script:
+   $ python fuck_pupilary_response.py
+4. Find the center of the PSF on the DMD. 
+   If you know the center coordinates apriori, enter them when prompted at the
+   start of the script. Otherwise, use the arrow keys to move the shape
+   around the screen until you find the center of the PSF.
+5. Use the ' ' keys to cycle through the knife edges
+
+
+
+
+Streaming to the Raspberry Pi Frame Buffer from Quasimondo 2025-06-19
+https://gist.github.com/Quasimondo/e47a5be0c2fa9a3ef80c433e3ee2aead
+
+@author: Aidan Walk, walka@hawaii.edu
+
+"""
 
 import os
 import numpy as np
