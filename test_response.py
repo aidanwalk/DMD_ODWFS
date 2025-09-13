@@ -1,4 +1,12 @@
+"""
+This script is used to program constant intensity screens on the DMD. This 
+script was used to study the DMD mirror duty cycle as a funcion of input
+intensity (i.e. to confirm the gamma function of the DMD -- non-linear 
+response) 
 
+set REVERSE_PERCEPTION = True to make the DMD response linear. 
+
+"""
 import time
 import numpy as np
 from scipy.ndimage import zoom
@@ -20,6 +28,7 @@ import display
 global DisplaySize
 DisplaySize = (1080, 1920)  # (height, width) in pixels
 global intensity; intensity = 0
+REVERSE_PERCEPTION = False  # Whether to apply reverse perception correction
 
 class Set(Enum):
     Disabled = 0
@@ -29,10 +38,9 @@ class Set(Enum):
 
 class Intensity_Screen:
     """
-    A class to generate ramp knife edges on the DMD. 
-    
-    ** WARNING ** 
-    This class fails to generate odd-valued ramp widths. 
+    A class to generate constant intensity screens on the DMD. This script was 
+    used to study the DMD mirror duty cycle as a funcion of input intensity.
+    (i.e. to confirm the gamma function of the DMD -- non-linear response) 
     
     parameters:
     -----------
@@ -60,10 +68,6 @@ class Intensity_Screen:
         return self.generate_screen(*args, **kwargs)
 
 
-
-    
-
-
     def generate_screen(self, intensity=0):
         """
         Generate an flat screen (all one intensitty) between 0 to 255 in intensity
@@ -80,7 +84,7 @@ class Intensity_Screen:
         """
         
         screen = np.ones(self.dmd_size, dtype=f'uint{self.bit_depth}')
-        screen *= display.intensity2hex(intensity, reverse_perception=False)
+        screen *= display.intensity2hex(intensity, reverse_perception=REVERSE_PERCEPTION)
         # Scale the screen to the image size
         screen = zoom(screen, (self.image_size[0] / self.dmd_size[0], self.image_size[1] / self.dmd_size[1]), order=0, prefilter=False)
         return screen

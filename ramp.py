@@ -1,4 +1,12 @@
+"""
+This script is effectively the same as fuck_pupilary_response.py, 
+only it does not correct for the human visual response function.
 
+This script was written before the gamma function correction was known on the 
+DMD. 
+
+
+"""
 import time
 import numpy as np
 from scipy.ndimage import zoom
