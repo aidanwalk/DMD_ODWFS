@@ -43,6 +43,15 @@ time to view this menu again.
 ------------------------------
 ```
 
+#### Linear Optical Differentiation WFS
+To run the DMD as an Optical Differentiation Wavefront Sensor (ODWFS), use program: fuck_pupilary_response.py
+To run: 
+$ python fuck_pupilary_response.py
+
+This enables you to program a sequentail knife edge test on the DMD with linear amplitude filters of varying slope. Different sloped amilitude filters directly determine the WFS dynamic range and sensitivity, analogous to the modulation amplitude in a Pyramid Wavefront Sensor. 
+
+The programmed linear amplitude filter is taking into account the fact that the DMD projector automatically converts input intensities to the human visual response function. This script applies the inverse gamma function, so that, for example, a greyscale value of 0.5 results in a micromirror duty cycle of truly 50%.  
+
 
 ## REFERENCES
 
